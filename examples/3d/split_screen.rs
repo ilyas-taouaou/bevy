@@ -3,12 +3,18 @@
 use std::f32::consts::PI;
 
 use bevy::{
-    pbr::CascadeShadowConfigBuilder, prelude::*, render::camera::Viewport, window::WindowResized,
+    core_pipeline::experimental::taa::{TemporalAntiAliasBundle, TemporalAntiAliasPlugin},
+    pbr::{CascadeShadowConfigBuilder, ScreenSpaceAmbientOcclusionBundle},
+    prelude::*,
+    render::camera::Viewport,
+    window::WindowResized,
 };
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins(TemporalAntiAliasPlugin)
+        .insert_resource(Msaa::Off)
         .add_systems(Startup, setup)
         .add_systems(Update, (set_camera_viewports, button_system))
         .run();
@@ -60,23 +66,25 @@ fn setup(
     .iter()
     .enumerate()
     {
-        let camera = commands
-            .spawn((
-                Camera3dBundle {
-                    transform: Transform::from_translation(*camera_pos)
-                        .looking_at(Vec3::ZERO, Vec3::Y),
-                    camera: Camera {
-                        // Renders cameras with different priorities to prevent ambiguities
-                        order: index as isize,
-                        ..default()
-                    },
+        let mut camera = commands.spawn((
+            Camera3dBundle {
+                transform: Transform::from_translation(*camera_pos).looking_at(Vec3::ZERO, Vec3::Y),
+                camera: Camera {
+                    // Renders cameras with different priorities to prevent ambiguities
+                    order: index as isize,
                     ..default()
                 },
-                CameraPosition {
-                    pos: UVec2::new((index % 2) as u32, (index / 2) as u32),
-                },
-            ))
-            .id();
+                ..default()
+            },
+            CameraPosition {
+                pos: UVec2::new((index % 2) as u32, (index / 2) as u32),
+            },
+            ScreenSpaceAmbientOcclusionBundle::default(),
+        ));
+
+        camera.insert(TemporalAntiAliasBundle::default());
+
+        let camera = camera.id();
 
         // Set up UI
         commands
