@@ -297,6 +297,7 @@ impl Plugin for RenderPlugin {
                         Query<&RawHandleWrapperHolder, With<PrimaryWindow>>,
                     > = SystemState::new(app.world_mut());
                     let primary_window = system_state.get(app.world()).get_single().ok().cloned();
+                    dbg!(&primary_window);
                     let settings = render_creation.clone();
                     let async_renderer = async move {
                         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
